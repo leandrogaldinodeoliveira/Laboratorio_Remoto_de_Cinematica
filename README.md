@@ -82,5 +82,4 @@ O ensaio é inteiramente controlado pela interface web, garantindo segurança na
 ## 📝 Licença e Autoria
 
 Projeto desenvolvido para fins de pesquisa e instrumentação didática.
-Autor: **[Insira o seu nome ou da sua equipe aqui]**
-Licença: [MIT](https://choosealicense.com/licenses/mit/) *(Sugestão de licença de código aberto, altere conforme necessário)*
+Autor: **Leandro Galdino de Oliveira**
