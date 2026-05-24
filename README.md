@@ -1,7 +1,3 @@
-Aqui está o arquivo `README.md` completo, totalmente revisado e atualizado. Esta versão reflete com precisão o estado atual do seu projeto, contendo a exclusão completa dos componentes térmicos (LED e ebulidor), a inicialização instantânea da coleta, a taxa de amostragem calibrada para **500 ms** e o novo display numérico fixo na interface do usuário.
-
----
-
 # Laboratório Remoto de Cinemática
 
 Um sistema de aquisição de dados em tempo real para ensaios de cinemática unidimensional. Este projeto integra uma arquitetura de hardware e software para monitoramento remoto, permitindo a aferição da posição espacial de um corpo e a visualização dinâmica de sua série temporal através de uma interface web.
