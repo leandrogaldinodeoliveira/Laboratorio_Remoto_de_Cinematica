@@ -1,0 +1,17 @@
+{
+  "name": "projeto-sensor-distancia",
+  "version": "1.0.0",
+  "description": "Laboratório Remoto de Cinemática",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^4.22.2",
+    "serialport": "^12.0.0",
+    "socket.io": "^4.8.3"
+  },
+  "author": "Seu Nome",
+  "license": "ISC"
+}
