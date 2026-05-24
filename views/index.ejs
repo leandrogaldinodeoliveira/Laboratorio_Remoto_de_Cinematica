@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laboratório Remoto de Cinemática</title>
+<style>
+    body {
+        font-family: 'Inter', sans-serif; margin: 0; padding: 20px;
+        background-color: #f0f2f5; color: #333;
+        display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+    }
+    h1 { color: #1a73e8; margin-bottom: 10px; }
+    p#contador {
+        font-size: 1.1em; color: #5f6368; background-color: #e8f0fe;
+        padding: 10px 15px; border-radius: 8px; margin-bottom: 20px;
+        min-width: 350px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+#displayDistancia {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #1a73e8;
+    background-color: #ffffff;
+    padding: 15px 30px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    border: 2px solid #1a73e8;
+}
+
+    button {
+        padding: 12px 25px; margin: 10px; border: none; border-radius: 8px;
+        cursor: pointer; font-size: 1em; font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.1s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button:disabled { background-color: #cccccc; color: #666666; cursor: not-allowed; opacity: 0.6; }
+    button#desligar { background-color: #d93025; color: white; }
+    button#desligar:hover:not(:disabled) { background-color: #c5221f; }
+    button#ligar { background-color: #1e8e3e; color: white; }
+    button#ligar:hover:not(:disabled) { background-color: #187832; }
+    button#baixarDados { background-color: #1a73e8; color: white; }
+    button#baixarDados:hover:not(:disabled) { background-color: #1765c8; }
+
+    div.chart-container {
+        width: 90%; max-width: 1000px; height: 65vh;
+        background-color: #ffffff; padding: 20px; border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); display: flex;
+        justify-content: center; align-items: center;
+    }
+    canvas#myChart { max-width: 100%; max-height: 100%; }
+    .button-container { display: flex; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<h1>Laboratório Remoto de Cinemática</h1>
+<p id="contador">Sistema em *standby*. Inicie a coleta de dados.</p>
+
+<div class="button-container">
+    <button id='desligar'>DESLIGAR</button>
+    <button id='ligar'>LIGAR</button>
+    <button id='baixarDados'>BAIXAR DADOS</button>
+</div>
+
+<div class="chart-container">
+    <canvas id="myChart"></canvas>
+</div>
+
+<div id="displayDistancia">
+    Distância Atual: <span id="valorDistancia">0</span> cm
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+let counter = 0;
+let tempoRegressivoExecucao;
+
+// Sub-rotina de controle temporal do ensaio
+function iniciarTemporizadorEnsaio() {
+    let tempoRestante = 600; // Limite estrutural de 10 minutos (600s)
+
+    tempoRegressivoExecucao = setInterval(function() {
+        let min = Math.floor(tempoRestante / 60);
+        let seg = tempoRestante % 60;
+        seg = seg < 10 ? '0' + seg : seg;
+        document.getElementById("contador").innerHTML = "Ensaio em andamento. Limite restante: " + min + "m " + seg + "s";
+        tempoRestante--;
+        
+        if (tempoRestante < 0) {
+            pararEnsaio("Ensaio concluído (Teto amostral atingido).");
+        }
+    }, 1000);
+}
+
+// Procedimento de encerramento e liberação de recursos
+function pararEnsaio(mensagem) {
+    if (tempoRegressivoExecucao) clearInterval(tempoRegressivoExecucao);
+    tempoRegressivoExecucao = null;
+
+    document.getElementById('contador').innerHTML = mensagem;
+    if (socket && socket.connected) {
+        socket.emit('Desligar', 'F');
+    }
+    document.getElementById("ligar").disabled = false;
+    document.getElementById("desligar").disabled = true;
+    if (myChart.data.labels.length > 0) {
+        document.getElementById("baixarDados").disabled = false;
+    }
+}
+
+// Rotina de exportação da matriz de dados para CSV
+function gerarCSV() {
+    const labels = myChart.data.labels;
+    const posicoes = myChart.data.datasets[0].data;
+
+    if (labels.length === 0) return;
+
+    let csv = "Tempo (s);Posicao (cm)\n";
+    for (let i = 0; i < labels.length; i++) {
+        csv += `${labels[i]};${posicoes[i]}\n`;
+    }
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    link.setAttribute("href", URL.createObjectURL(blob));
+    link.setAttribute("download", "ensaio_cinematico_posicao.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Inicialização da comunicação duplex
+var socket = io();
+var BtnDesligar = document.getElementById("desligar");
+var BtnLigar = document.getElementById("ligar");
+var BtnBaixarDados = document.getElementById("baixarDados");
+
+BtnDesligar.disabled = true;
+BtnBaixarDados.disabled = true;
+
+// Gatilho de acionamento do experimento
+BtnLigar.addEventListener("click", function() {
+    if (socket && socket.connected) {
+        socket.emit('Ligar', 'T');
+    }
+    
+    // Reset da estrutura visual
+    myChart.data.labels = [];
+    myChart.data.datasets[0].data = [];
+    counter = 0;
+    myChart.update();
+   
+    BtnLigar.disabled = true;
+    BtnDesligar.disabled = false;
+    BtnBaixarDados.disabled = true;
+    
+    // Início imediato do marco temporal
+    iniciarTemporizadorEnsaio();
+});
+
+BtnDesligar.addEventListener("click", function() {
+    pararEnsaio("Ensaio deliberadamente abortado pelo operador.");
+});
+
+BtnBaixarDados.addEventListener("click", function() {
+    gerarCSV();
+});
+
+// Listener de processamento dos pacotes do servidor
+socket.on('data', function(dataSerial) {
+    if (tempoRegressivoExecucao) { 
+        if (dataSerial && dataSerial.valor && Array.isArray(dataSerial.valor)) {
+            const pos = parseFloat(dataSerial.valor[0]);
+
+            if (!isNaN(pos)) {
+                // --- ATUALIZAÇÃO DA CAIXA FIXA ---
+                document.getElementById('valorDistancia').innerText = pos;
+                
+                // Plotagem no gráfico
+                let tempoSegundos = (counter * 0.5).toFixed(1); 
+                myChart.data.labels.push(tempoSegundos); 
+                myChart.data.datasets[0].data.push(pos);  
+                myChart.update();
+                counter++;
+            }
+        }
+    }
+});
+
+socket.on('disconnect', function() {
+    pararEnsaio("Severidade: Conexão interrompida de forma assíncrona.");
+});
+
+// Inicialização estrutural do framework analítico
+const ctx = document.getElementById('myChart').getContext('2d');
+var configChart = {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Posição (cm)',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            backgroundColor: 'rgba(255, 99, 132, 0.1)',
+            borderWidth: 2,
+            tension: 0.15
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { 
+                beginAtZero: false,
+                title: { display: true, text: 'Distância Relativa (cm)' } 
+            },
+            x: { 
+                title: { display: true, text: 'Tempo Decorrido (s)' } 
+            }
+        },
+        plugins: { 
+            legend: { position: 'top' } 
+        },
+        animation: { duration: 0 } // Desabilita interpolações gráficas para não introduzir lag sistêmico
+    }
+};
+var myChart = new Chart(ctx, configChart);
+</script>
+</body>
+</html>
