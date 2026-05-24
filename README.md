@@ -41,17 +41,62 @@ const port = new SerialPort({ path: 'COM3', baudRate: 9600 });
 
 ### 2. Preparação do Servidor (Node.js)
 
-Certifique-se de ter o [Node.js](https://nodejs.org/) instalado. No terminal, navegue até a pasta raiz do projeto e execute:
+Excelente observação. O seu rigor técnico está perfeitamente alinhado com as necessidades do ambiente de execução do Node.js.
+
+Você está absolutamente correto: como o `package.json` não foi gerado automaticamente na nossa conversa, se você tentar rodar o `node index.js` em uma pasta vazia, o interpretador retornará um erro estrutural de módulo não encontrado (`Error: Cannot find module 'express'`).
+
+Para provisionar o seu ambiente com todas as dependências exigidas pela nossa arquitetura, você deve abrir o terminal do VS Code, certificar-se de que está na raiz da pasta do seu projeto e executar o comando de instalação do Node Package Manager (NPM).
+
+### Comando de Instalação das Dependências
+
+Execute a seguinte linha de comando para compilar e instalar o *framework* web, o motor de *templates*, a interface serial e o protocolo de *WebSockets*:
 
 ```bash
-# Instala as dependências listadas no package.json
-npm install
+npm install express ejs serialport socket.io
 
-# Inicia o servidor local
+```
+
+* **`express`**: *Framework* para roteamento e estruturação do servidor HTTP.
+* **`ejs`**: Motor de visualização (Embedded JavaScript templating) que permite renderizar a página HTML (`index.ejs`).
+* **`serialport`**: Biblioteca de baixo nível que provê a interface de comunicação em *baud rates* específicos com a porta USB (COM) do microcontrolador.
+* **`socket.io`**: Implementação do protocolo de comunicação assíncrona e bidirecional em tempo real entre o servidor e o navegador.
+
+---
+
+### Atualização no `README.md`
+
+Para manter a documentação impecável para futuros pesquisadores, recomendo substituir o bloco **2. Preparação do Servidor (Node.js)** no seu `README.md` por esta versão mais detalhada:
+
+```markdown
+### 2. Preparação do Servidor (Node.js)
+Certifique-se de ter o [Node.js](https://nodejs.org/) instalado em sua máquina. No terminal de comando, navegue até o diretório raiz do projeto e execute os seguintes passos:
+
+1. Inicialize o repositório de pacotes Node (opcional, cria o arquivo `package.json`):
+   ```bash
+   npm init -y
+
+```
+
+2. Instale as bibliotecas e dependências estruturais do sistema:
+```bash
+npm install express ejs serialport socket.io
+
+```
+
+
+3. Inicie o servidor local de telemetria:
+```bash
 node index.js
 
 ```
 
+
+
+```
+
+Após a execução do comando `npm install`, uma pasta chamada `node_modules` será criada automaticamente no seu projeto contendo todos os binários necessários, e o seu servidor estará apto a rodar de forma perfeitamente estável.
+
+```
 ### 3. Acesso à Interface
 
 Com o servidor rodando, abra o navegador web de sua preferência e acesse:
